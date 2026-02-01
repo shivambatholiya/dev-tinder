@@ -53,6 +53,26 @@ const validateSignupData = (req) => {
     }
 };
 
+const validateEditProfileData = (req) => {
+    const requestData = Object.keys(req.data);
+
+    // 1. Validation: Ensure the body isn't empty
+    if (requestData.length === 0) {
+        return res.status(400).json({ message: "No update data provided" });
+    }
+
+    const allowedEditFields = ["firstName", "lastName", "emailId", "photoUrl", "gender", "age"];
+
+    const isAllowed = requestData.every((ele) => {
+        return allowedEditFields.includes(ele);
+    })
+
+    if(!isAllowed) {
+        throw new Error("Invalid Update fields");
+    }
+}
+
 module.exports = {
     validateSignupData,
+    validateEditProfileData
 };

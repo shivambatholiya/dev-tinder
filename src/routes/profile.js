@@ -1,6 +1,7 @@
 const express = require("express");
 const User = require("../models/user");
 const { userAuth } = require("../middlewares/auth");
+const {validateEditProfileData} = require("../utils/validation")
 
 const router = express.Router();
 
@@ -16,18 +17,24 @@ router.get("/profile/view", userAuth, async (req, res) => {
 
 router.patch("/profile/edit", userAuth, async (req, res) => {
     try {
-        const editData = req.body;
-        const user = req.user;
-        const userId = user._id;
+        if(!validateEditProfileData(req)) {
+            throw new Error("Invalid Edit Request");
+        } 
 
-        const userr = await User.findByIdAndUpdate({ _id: userId }, editData, {
-            returnDocument: "after",
-            runValidators: true,
+        const loggedInUser = req.user; // Obtained from userAuth middleware
+
+        // 2. Map the updates directly to the user object
+        Object.keys(req.body).forEach((key) => {
+            loggedInUser[key] = req.body[key];
         });
-        if (!userr) {
-            throw new res.status(404).send("User Not Found");
-        }
-        res.send("Profile Updated Successfully: " + userr);
+
+        // 3. Save the document (triggers schema validations)
+        await loggedInUser.save();
+
+        res.json({
+            message: `${loggedInUser.firstName}, your profile was updated successfully`,
+            data: loggedInUser
+        });
         
     } catch(err) {
         res.status(500).send("Error in profile update: " + err.message)
