@@ -72,7 +72,24 @@ const validateEditProfileData = (req) => {
     }
 }
 
+const validateConnectionRequestData = (req) => {
+    const allowedStatuses = ['interested', 'ignored'];
+    const { status } = req.params;
+    if (!allowedStatuses.includes(status)) {
+        throw new Error("Invalid status");
+    }
+
+    // Validate toUserId
+    const toUserId = req.params.userId;
+
+    if (!toUserId || !validator.isMongoId(toUserId)) {
+        throw new Error("Invalid toUserId");
+    }
+
+}
+
 module.exports = {
     validateSignupData,
-    validateEditProfileData
+    validateEditProfileData,
+    validateConnectionRequestData
 };
