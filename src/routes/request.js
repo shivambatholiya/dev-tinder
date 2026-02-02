@@ -55,4 +55,38 @@ router.post("/request/send/:status/:userId", userAuth, async (req, res) => {
     }
 });
 
+router.post("/request/review/:status/:requestId", userAuth, async (req, res)  => {
+    try {
+        const loggedInUser = req.user;
+        //validate request data
+        const allowedStatus = ['accepted', 'rejected'];
+        const { status, requestId } = req.params;
+
+        if (!allowedStatus.includes(status)) {
+            throw new Error("Invalid status for reviewing connection request");
+        }
+
+        // Check if the connection request exists, and belongs to the logged-in user and is in 'interested' status
+        const connectionRequest = await ConnectionRequest.findOne({
+            _id: requestId,
+            toUserId: loggedInUser._id,
+            status: 'interested'
+        });
+        if (!connectionRequest) {
+            throw new Error("Connection request not found");
+        }
+
+        // Update the status of the connection request
+        connectionRequest.status = status;
+        await connectionRequest.save();
+
+        res.json({
+            message: `Connection request ${status} successfully`,
+            data: connectionRequest
+        })
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+});
+
 module.exports = router;

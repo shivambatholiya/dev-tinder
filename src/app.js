@@ -3,6 +3,7 @@ const cookieParser = require("cookie-parser");
 const authRouter = require("../src/routes/auth")
 const profileRouter = require("../src/routes/profile")
 const requestRouter = require("../src/routes/request")
+const userRouter = require("../src/routes/user")
 const connectDB = require("./config/database");
 
 //create express app
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
+app.use("/", userRouter);
 
 // Connect to MongoDB and start the server
 connectDB()
