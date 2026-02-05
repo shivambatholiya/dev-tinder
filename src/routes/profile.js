@@ -9,7 +9,20 @@ const router = express.Router();
 router.get("/profile/view", userAuth, async (req, res) => {
     try {
         const user = req.user;
-        res.send(user);
+        const {firstName, lastName, emailId, photoUrl, gender, age, skills, about} = user;
+        res.json({
+            message: "Profile fetched successfully",
+            data: {
+                firstName,
+                lastName,
+                emailId,
+                photoUrl,
+                gender,
+                age,
+                skills,
+                about
+            }
+        })
     } catch (err) {
         return res.status(500).send("Error fetching profile");
     }

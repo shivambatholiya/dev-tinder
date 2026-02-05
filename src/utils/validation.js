@@ -1,13 +1,13 @@
 const validator = require("validator");
 
 const validateSignupData = (req) => {
-    const { firstName, emailId, password, age, gender, photoUrl, about, skills } =
+    const { firstName, email, password, age, gender, photoUrl, about, skills } =
         req.body;
 
     if (!firstName || firstName.length < 3 || firstName.length > 30) {
         throw new Error("First name must be between 3 and 30 characters long");
     }
-    if (!emailId || !validator.isEmail(emailId)) {
+    if (!email || !validator.isEmail(email)) {
         throw new Error("Invalid email format");
     }
     if (!password) {

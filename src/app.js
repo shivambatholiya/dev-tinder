@@ -5,9 +5,22 @@ const profileRouter = require("../src/routes/profile")
 const requestRouter = require("../src/routes/request")
 const userRouter = require("../src/routes/user")
 const connectDB = require("./config/database");
+const cors = require("cors");
+const morgan = require("morgan");
 
 //create express app
 const app = express();
+
+// Use 'dev' format for clean, colored logs in terminal
+app.use(morgan("dev"));
+
+// Configure CORS
+app.use(cors({
+    origin: "http://localhost:5173", // Allow only your frontend
+    credentials: true,                // Allow cookies (if needed for devTinder)
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 app.use(cookieParser());
 app.use(express.json());

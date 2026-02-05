@@ -7,7 +7,7 @@ const userAuth = async (req, res, next) => {
         const { token } = req.cookies;
         console.log("Auth Token:", req.cookies);
         if (!token) {
-            throw new Error("Invalid Auth Token");
+            return res.status(401).send("AUTH_FAILED: No token provided");
         }
         const decoded = await jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.userId);

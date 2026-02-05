@@ -12,21 +12,33 @@ router.post("/signup", async (req, res) => {
         validateSignupData(req);
 
         // Signup logic here
-        const { firstName, lastName, emailId, password} = req.body;
+        const { firstName, lastName, email, password} = req.body;
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({
             firstName,
             lastName,
-            emailId,
+            emailId: email,
             password: hashedPassword
         });
 
         await user.save();
+
+        const token = user.getJWT();
+        res.cookie("token", token, { httpOnly: true, secure: true, sameSite: 'Strict', expires: new Date(Date.now() + 3600000) }); // 1 hour expiry
+
+        res.status(201).json({
+            message: "User signed up successfully",
+            token: token,
+            data: {
+                userId: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
+        })
     } catch (err) {
         return res.status(500).send("Error signing up user: " + err.message);
     }
-    res.send("User signed up");
 });
 
 // Login api - POST /login - login a user
@@ -50,7 +62,14 @@ router.post("/login", async (req, res) => {
         const token = user.getJWT();
         res.cookie("token", token, { httpOnly: true, secure: true, sameSite: 'Strict', expires: new Date(Date.now() + 3600000) }); // 1 hour expiry
         
-        res.send("User logged in successfully");
+        res.json({
+            message: "User logged in successfully",
+            data: {
+                userId: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName
+            }
+        });
     } catch (err) {
         return res.status(500).send("LOGIN_FAILED: " + err.message);
     }
