@@ -1,13 +1,13 @@
 const validator = require("validator");
 
 const validateSignupData = (req) => {
-    const { firstName, email, password, age, gender, photoUrl, about, skills } =
+    const { firstName, emailId, password, age, gender, photoUrl, about, skills } =
         req.body;
 
     if (!firstName || firstName.length < 3 || firstName.length > 30) {
         throw new Error("First name must be between 3 and 30 characters long");
     }
-    if (!email || !validator.isEmail(email)) {
+    if (!emailId || !validator.isEmail(emailId)) {
         throw new Error("Invalid email format");
     }
     if (!password) {
@@ -54,14 +54,13 @@ const validateSignupData = (req) => {
 };
 
 const validateEditProfileData = (req) => {
-    const requestData = Object.keys(req.data);
-
+    const requestData = Object.keys(req.body);
     // 1. Validation: Ensure the body isn't empty
     if (requestData.length === 0) {
-        return res.status(400).json({ message: "No update data provided" });
+        throw new Error("No update data provided");
     }
 
-    const allowedEditFields = ["firstName", "lastName", "emailId", "photoUrl", "gender", "age"];
+    const allowedEditFields = ["firstName", "lastName", "emailId", "photoUrl", "gender", "age", "skills", "about"];
 
     const isAllowed = requestData.every((ele) => {
         return allowedEditFields.includes(ele);
@@ -70,6 +69,8 @@ const validateEditProfileData = (req) => {
     if(!isAllowed) {
         throw new Error("Invalid Update fields");
     }
+
+    return true;
 }
 
 const validateConnectionRequestData = (req) => {

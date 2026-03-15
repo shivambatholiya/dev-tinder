@@ -84,9 +84,11 @@ router.get("/user/feed", userAuth, async (req, res) => {
                 {_id: {$nin: Array.from(excludeUserIds)}}
             ]
         })
-        .select('firstName lastName photoUrl skills')
+        .select('firstName lastName photoUrl skills about age gender')
         .skip(parseInt(skip))
         .limit(parseInt(limit));
+
+        console.log("Feed Users:", feedUsers);
 
         res.json({
             message: "User feed fetched successfully",

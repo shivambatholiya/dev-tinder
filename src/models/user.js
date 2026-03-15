@@ -38,13 +38,18 @@ const userSchema = new mongoose.Schema({
     gender: {
         type: String,
         lowercase: true,
-        enum: ["male", "female", "other"],
-        message: `{VALUE} is not a valid gender type`
+        enum: ["male", "female", "other", ""],
+        message: `{VALUE} is not a valid gender type`,
     },
     photoUrl: {
         type: String,
         validate(value) {
-            if (!validator.isURL(value)) {
+            if (
+                value &&
+                !/^https?:\/\/(localhost|127\.0\.0\.1|.+\..+)(:\d+)?\/.+/.test(
+                    value,
+                )
+            ) {
                 throw new Error("Invalid URL format for photoUrl");
             }
         },
