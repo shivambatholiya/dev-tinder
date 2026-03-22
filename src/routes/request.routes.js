@@ -5,7 +5,6 @@ const router = express.Router();
 const { userAuth } = require("../middlewares/auth");
 const { validateConnectionRequestData } = require("../utils/validation");
 
-
 // sendConnection api - POST /connect/:id - connect with a user by id
 router.post("/request/send/:status/:userId", userAuth, async (req, res) => {
     try {
@@ -21,69 +20,136 @@ router.post("/request/send/:status/:userId", userAuth, async (req, res) => {
         //Check if toUser exists
         const toUser = await User.findById(toUserId);
         if (!toUser) {
-            throw new Error("The user you are trying to connect to does not exist");
-        };
+            throw new Error(
+                "The user you are trying to connect to does not exist",
+            );
+        }
 
         // Check if a connection request already exists between the two users
         const existingRequest = await ConnectionRequest.findOne({
             $or: [
                 { fromUserId: fromUserId, toUserId: toUserId },
-                { fromUserId: toUserId, toUserId: fromUserId }
-            ]
+                { fromUserId: toUserId, toUserId: fromUserId },
+            ],
         });
 
-        if(existingRequest) {
-            throw new Error("A connection request already exists between these users");
-        };
+        if (existingRequest) {
+            throw new Error(
+                "A connection request already exists between these users",
+            );
+        }
 
         // Create a new connection request
         const newConnectionRequest = new ConnectionRequest({
             fromUserId: fromUserId,
             toUserId: toUserId,
-            status: status
+            status: status,
         });
 
         // Save the connection request to the database
         await newConnectionRequest.save();
 
         res.json({
-            message: status === 'interested' ? `Connection request sent to ${toUser.firstName}` : "Connection request ignored",
-            data: newConnectionRequest
-        })
+            message:
+                status === "interested"
+                    ? `Connection request sent to ${toUser.firstName}`
+                    : "Connection request ignored",
+            data: newConnectionRequest,
+        });
     } catch (error) {
         return res.status(400).json({ message: error.message });
     }
 });
 
-router.post("/request/review/:status/:requestId", userAuth, async (req, res)  => {
+router.post(
+    "/request/review/:status/:requestId",
+    userAuth,
+    async (req, res) => {
+        try {
+            const loggedInUser = req.user;
+            //validate request data
+            const allowedStatus = ["accepted", "rejected"];
+            const { status, requestId } = req.params;
+
+            if (!allowedStatus.includes(status)) {
+                throw new Error(
+                    "Invalid status for reviewing connection request",
+                );
+            }
+
+            // Check if the connection request exists, and belongs to the logged-in user and is in 'interested' status
+            const connectionRequest = await ConnectionRequest.findOne({
+                _id: requestId,
+                toUserId: loggedInUser._id,
+                status: "interested",
+            });
+            if (!connectionRequest) {
+                throw new Error("Connection request not found");
+            }
+
+            // Update the status of the connection request
+            connectionRequest.status = status;
+            await connectionRequest.save();
+
+            res.json({
+                message: `Connection request ${status} successfully`,
+                data: connectionRequest,
+            });
+        } catch (error) {
+            return res.status(400).json({ message: error.message });
+        }
+    },
+);
+
+// sentRequest api - GET /connect/sent - get all sent connection requests
+router.get("/request/sent", userAuth, async (req, res) => {
     try {
-        const loggedInUser = req.user;
-        //validate request data
-        const allowedStatus = ['accepted', 'rejected'];
-        const { status, requestId } = req.params;
+        const user = req.user;
+        const sentRequests = await ConnectionRequest.find({
+            fromUserId: user._id,
+            status: "interested",
+        }).populate("toUserId", "firstName lastName profilePicture");
 
-        if (!allowedStatus.includes(status)) {
-            throw new Error("Invalid status for reviewing connection request");
+        // Check if there are any sent connection requests
+        if (!sentRequests || sentRequests.length === 0) {
+            return res.json({
+                message: "No sent connection requests found",
+                data: [],
+            });
         }
-
-        // Check if the connection request exists, and belongs to the logged-in user and is in 'interested' status
-        const connectionRequest = await ConnectionRequest.findOne({
-            _id: requestId,
-            toUserId: loggedInUser._id,
-            status: 'interested'
-        });
-        if (!connectionRequest) {
-            throw new Error("Connection request not found");
-        }
-
-        // Update the status of the connection request
-        connectionRequest.status = status;
-        await connectionRequest.save();
 
         res.json({
-            message: `Connection request ${status} successfully`,
-            data: connectionRequest
-        })
+            message: "Sent connection requests retrieved successfully",
+            data: sentRequests,
+        });
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+});
+
+// cancelSentRequest api - DELETE /connect/cancel/:requestId - cancel a sent connection request
+router.delete("/request/cancel/:requestId", userAuth, async (req, res) => {
+    try {
+        const user = req.user;
+        const { requestId } = req.params;
+        // Check if the connection request exists and belongs to the logged-in user
+        const connectionRequest = await ConnectionRequest.findOne({
+            _id: requestId,
+            fromUserId: user._id,
+            status: "interested",
+        });
+        if (!connectionRequest) {
+            throw new Error(
+                "Connection request not found or cannot be cancelled",
+            );
+        }
+
+        // Delete the connection request
+        await ConnectionRequest.deleteOne({ _id: requestId });
+
+        res.json({
+            message: "Connection request cancelled successfully",
+        });
     } catch (error) {
         return res.status(400).json({ message: error.message });
     }
